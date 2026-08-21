@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { getDB } = require("../db");
@@ -22,14 +22,28 @@ router.post("/register", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    const now = new Date();
+
     const result = await users.insertOne({
       name,
       email,
       passwordHash,
       role,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: now,
+      updatedAt: now
     });
+
+    if (role === "organization") {
+      await db.collection("organizations").insertOne({
+        name,
+        type: "community",
+        address: "",
+        contactEmail: email,
+        ownerUserId: result.insertedId,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
 
     res.status(201).json({
       message: "Registration successful",
@@ -80,3 +94,4 @@ router.post("/login", async (req, res) => {
 });
 
 module.exports = router;
+

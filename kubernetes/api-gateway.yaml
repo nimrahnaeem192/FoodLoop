@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: foodloop/api-gateway:latest
+          image: foodloop-api-gateway:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           envFrom:
@@ -37,3 +38,7 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+
+
+
+

@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: python-service
@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: python-service
-          image: foodloop/python-service:latest
+          image: foodloop-python-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           livenessProbe:
@@ -34,3 +35,7 @@ spec:
   ports:
     - port: 8000
       targetPort: 8000
+
+
+
+

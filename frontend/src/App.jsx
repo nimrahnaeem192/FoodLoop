@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import "./styles.css";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function App() {
   const [page, setPage] = useState("home");
@@ -9,6 +9,9 @@ export default function App() {
   const [food, setFood] = useState([]);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [message, setMessage] = useState("");
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const loadData = async () => {
     try {
@@ -26,6 +29,16 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!message) return;
+
+    const timer = setTimeout(() => {
+      setMessage("");
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [message]);
 
   const login = async (e) => {
     e.preventDefault();
@@ -48,6 +61,113 @@ export default function App() {
       setPage("dashboard");
     } else {
       setMessage(data.error || "Login failed.");
+    }
+  };
+
+  const signup = async (e) => {
+    e.preventDefault();
+
+    const name = e.target.name.value.trim();
+    const email = e.target.email.value.trim();
+    const password = e.target.password.value;
+    const confirmPassword = e.target.confirmPassword.value;
+    const role = e.target.role.value;
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage("Registration successful. Please login.");
+        e.target.reset();
+        setPage("login");
+      } else {
+        setMessage(data.error || "Registration failed.");
+      }
+    } catch {
+      setMessage("Could not connect to FoodLoop API.");
+    }
+  };
+
+  const claimFood = async (foodListingId) => {
+    if (!token) {
+      setMessage("Please login first.");
+      setPage("login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/claims`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          foodListingId,
+          organizationId: "6a87c03187cc9a9f383a02e4",
+          quantity: 1
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage("Food claim submitted successfully.");
+        loadData();
+      } else {
+        setMessage(data.error || "Failed to submit claim.");
+      }
+    } catch {
+      setMessage("Could not connect to FoodLoop API.");
+    }
+  };
+
+  const askAI = async (e) => {
+    e.preventDefault();
+
+    if (!aiQuestion.trim()) return;
+
+    setAiLoading(true);
+    setAiAnswer("");
+
+    try {
+      const res = await fetch(`${API}/api/ai/advice`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          question: aiQuestion
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.answer) {
+        setAiAnswer(data.answer);
+      } else {
+        setAiAnswer(data.error || "AI could not generate an answer.");
+      }
+    } catch {
+      setAiAnswer("Could not connect to FoodLoop AI.");
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -104,14 +224,22 @@ export default function App() {
           <button onClick={() => { loadData(); setPage("food"); }}>
             Available Food
           </button>
+          <button onClick={() => setPage("ai")}>
+            AI Advisor
+          </button>
           <button onClick={() => setPage("create")}>
             Donate Food
           </button>
 
           {!token ? (
-            <button className="nav-login" onClick={() => setPage("login")}>
-              Login
-            </button>
+            <>
+              <button className="nav-login" onClick={() => setPage("login")}>
+                Login
+              </button>
+              <button className="nav-login" onClick={() => setPage("signup")}>
+                Sign Up
+              </button>
+            </>
           ) : (
             <button
               className="nav-login"
@@ -131,7 +259,7 @@ export default function App() {
 
         {message && (
           <div className="message">
-            ? {message}
+            {message}
           </div>
         )}
 
@@ -197,7 +325,7 @@ export default function App() {
                   name="email"
                   type="email"
                   placeholder="donor@test.com"
-                  defaultValue="donor@test.com"
+                  defaultValue=""
                   required
                 />
 
@@ -206,7 +334,7 @@ export default function App() {
                   name="password"
                   type="password"
                   placeholder="Password"
-                  defaultValue="Test12345"
+                  defaultValue=""
                   required
                 />
 
@@ -214,6 +342,71 @@ export default function App() {
                   Login
                 </button>
               </form>
+            </div>
+          </section>
+        )}
+
+        {page === "signup" && (
+          <section className="form-page">
+            <div className="form-card">
+              <div className="form-icon">FOOD</div>
+              <h1>Create your account</h1>
+              <p>Join FoodLoop and help reduce food waste.</p>
+
+              <form onSubmit={signup}>
+                <label>Name</label>
+                <input
+                  name="name"
+                  type="text"
+                  placeholder="Your name"
+                  required
+                />
+
+                <label>Email</label>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                />
+
+                <label>Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Create a password"
+                  required
+                />
+
+                <label>Confirm Password</label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  required
+                />
+
+                <label>Account Type</label>
+                <select name="role" defaultValue="donor">
+                  <option value="donor">Food Donor</option>
+                  <option value="organization">Organization</option>
+                </select>
+
+                <button className="primary-btn" type="submit">
+                  Create Account
+                </button>
+              </form>
+
+              <p>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="nav-login"
+                  onClick={() => setPage("login")}
+                >
+                  Login
+                </button>
+              </p>
             </div>
           </section>
         )}
@@ -256,12 +449,61 @@ export default function App() {
                   <div className="food-status">{item.status}</div>
                   <h2>{item.title}</h2>
                   <p>{item.description}</p>
+                  {token && (
+                    <button
+                      className="primary-btn"
+                      onClick={() => claimFood(item._id)}
+                    >
+                      Claim Food
+                    </button>
+                  )}
+
                   <div className="quantity">
                     <strong>{item.quantity}</strong>
                     <span>units available</span>
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {page === "ai" && (
+          <section className="form-page">
+            <div className="form-card wide">
+              <div className="form-icon">AI</div>
+              <p className="eyebrow">GEMINI AI</p>
+              <h1>FoodLoop AI Advisor</h1>
+              <p>
+                Ask FoodLoop AI for practical advice about food waste,
+                donations, community impact, and food redistribution.
+              </p>
+
+              <form onSubmit={askAI}>
+                <label>Your Question</label>
+                <textarea
+                  value={aiQuestion}
+                  onChange={(e) => setAiQuestion(e.target.value)}
+                  placeholder="e.g. Give me 3 practical ways FoodLoop can reduce food waste."
+                  rows="4"
+                  required
+                />
+
+                <button
+                  className="primary-btn"
+                  type="submit"
+                  disabled={aiLoading}
+                >
+                  {aiLoading ? "Thinking..." : "Ask FoodLoop AI"}
+                </button>
+              </form>
+
+              {aiAnswer && (
+                <div className="message" style={{ marginTop: "20px", whiteSpace: "pre-wrap" }}>
+                  <strong>FoodLoop AI:</strong>
+                  <p>{aiAnswer}</p>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -328,6 +570,9 @@ function Card({ title, value, icon }) {
     </div>
   );
 }
+
+
+
 
 
 

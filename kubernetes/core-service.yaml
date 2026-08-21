@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: core-service
@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: core-service
-          image: foodloop/core-service:latest
+          image: foodloop-core-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3002
           livenessProbe:
@@ -34,3 +35,7 @@ spec:
   ports:
     - port: 3002
       targetPort: 3002
+
+
+
+

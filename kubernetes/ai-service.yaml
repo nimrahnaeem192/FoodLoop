@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai-service
@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: ai-service
-          image: foodloop/ai-service:latest
+          image: foodloop-ai-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3003
           livenessProbe:
@@ -34,3 +35,7 @@ spec:
   ports:
     - port: 3003
       targetPort: 3003
+
+
+
+

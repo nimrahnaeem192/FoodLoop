@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: foodloop/frontend:latest
+          image: foodloop-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
 ---
@@ -30,3 +31,7 @@ spec:
   ports:
     - port: 3000
       targetPort: 3000
+
+
+
+
