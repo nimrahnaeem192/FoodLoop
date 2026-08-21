@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import "./styles.css";
 
-const API = "http://localhost:8080";
+const API = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 export default function App() {
   const [page, setPage] = useState("home");
@@ -328,6 +328,7 @@ function Card({ title, value, icon }) {
     </div>
   );
 }
+
 
 
 
