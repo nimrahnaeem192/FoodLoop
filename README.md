@@ -1,170 +1,108 @@
-# FoodLoop
+﻿# FoodLoop
 
-Food-rescue platform connecting food providers with community organizations.
+FoodLoop is an AI-assisted food rescue platform that connects food providers with community organizations to reduce food waste.
 
-This repository currently contains the **initial scaffold only**. Application business logic is not implemented yet.
+## Features
+
+- User registration and login
+- JWT authentication and role-based access
+- Food listing and management
+- Food claiming
+- Dashboard and rescue statistics
+- Gemini-powered AI Advisor
+- Deterministic Python matching service
+- MongoDB database
+- Docker containerization
+- Kubernetes deployment
 
 ## Architecture
 
-```
 React Frontend
-      |
-      v
+        |
+        v
 API Gateway
-      |
-      +--> Auth Service
-      |
-      +--> Core Service
-      |
-      +--> AI Service
-                 |
-                 +--> Python Matching Service
-                 |
-                 +--> Gemini
-      |
-      v
-MongoDB
-```
+        |
+   +----+----+----+
+   |    |    |    |
+ Auth Core  AI  Python
+   |    |    |    |
+   +----+----+    |
+        |         |
+      MongoDB   Gemini
 
-### Tech stack
+## Technology Stack
 
-| Layer | Choice |
-| --- | --- |
-| Frontend | React |
-| Backend | Node.js + Express |
-| Database | MongoDB |
-| AI | Gemini API only |
-| Matching / analysis | FastAPI (Python) |
-| Auth | JWT + role-based access control |
-| Containers | Docker |
-| Orchestration | Kubernetes |
-| Infrastructure | Terraform |
-| Version control | Git / GitHub |
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: MongoDB
+- AI: Google Gemini API
+- Matching: Python + FastAPI
+- Authentication: JWT + bcrypt
+- Containers: Docker
+- Orchestration: Kubernetes
+- Version Control: Git + GitHub
 
-### Backend services
+## Services
 
-1. **API Gateway** — Single frontend entry point. Routes `/api/*` to internal services. Basic request validation only. No business logic.
-2. **Auth Service** — Registration, login, JWT generation, password hashing, role-based authentication (`provider`, `organization`, `admin`).
-3. **Core Service** — Food listings, organizations, claims, matches, dashboard statistics, activity logs.
-4. **AI Service** — Waste Advisor (Gemini generative), Food Safety Assistant (RAG), Matching Agent (Gemini / tool calling), Gemini primary/backup keys, integration with the Python service.
-5. **Python Service** — Deterministic matching (`FoodMatcher`, `WasteAnalyzer`, `SustainabilityCalculator`). Continues to work if Gemini is unavailable.
+| Service | Port |
+|---|---:|
+| Frontend | 3000 |
+| API Gateway | 8080 |
+| Auth Service | 3001 |
+| Core Service | 3002 |
+| AI Service | 3003 |
+| Python Service | 8000 |
+| MongoDB | 27017 |
 
-### MongoDB collections
+## AI Advisor
 
-`users`, `organizations`, `food_listings`, `claims`, `matches`, `activity_logs`
+FoodLoop includes a Gemini-powered AI Advisor.
 
-### API surface (planned)
+The frontend communicates with the backend instead of exposing Gemini API keys directly.
 
-- `/api/auth/*`
-- `/api/food/*`
-- `/api/organizations/*`
-- `/api/claims/*`
-- `/api/matches/*`
-- `/api/dashboard/*`
-- `/api/ai/*`
+Gemini credentials remain server-side.
 
-### Unique feature (planned)
+## Reliability
 
-Food Rescue Score / impact summary from operational data only:
+The system uses separate services for authentication, core application logic, AI, and deterministic matching.
 
-- total meals rescued
-- successful matches
-- active organizations
-- expired listings
+The Python matching service provides functionality that does not depend completely on Gemini availability.
 
-Do not invent environmental impact calculations.
+## Docker
 
-## Gemini
+Run the complete application with:
 
-Keys are **server-side only** on the AI Service. Never send `GEMINI_API_KEY_*` to React.
-
-- `GEMINI_API_KEY_PRIMARY` is attempted first
-- `GEMINI_API_KEY_BACKUP` is used on failure or rate-limit conditions
-
-Deterministic matching in the Python service must keep working if Gemini is down.
-
-## Project structure
-
-See the root tree: `frontend/`, `backend/`, `ai-service/`, `python-service/`, `rag/knowledge-base/`, `docker/`, `kubernetes/`, `terraform/`, `scripts/`, `docs/`.
-
-## Run the scaffold
-
-Prerequisites: Node.js 20+, Python 3.11+, Docker (optional), Git.
-
-1. Copy environment variables:
-
-```bash
-cp .env.example .env
-```
-
-2. Install and run services locally (health checks only at this stage).
-
-**API Gateway**
-
-```bash
-cd backend/api-gateway
-npm install
-npm run dev
-```
-
-**Auth Service**
-
-```bash
-cd backend/auth-service
-npm install
-npm run dev
-```
-
-**Core Service**
-
-```bash
-cd backend/core-service
-npm install
-npm run dev
-```
-
-**AI Service**
-
-```bash
-cd ai-service
-npm install
-npm run dev
-```
-
-**Python Service**
-
-```bash
-cd python-service
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-**Frontend**
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Docker Compose (all services + MongoDB)**
-
-```bash
 docker compose up --build
-```
 
-Health endpoints:
+Frontend:
 
-- Gateway: `http://localhost:8080/health`
-- Auth: `http://localhost:3001/health`
-- Core: `http://localhost:3002/health`
-- AI: `http://localhost:3003/health`
-- Python: `http://localhost:8000/health`
-- Frontend: `http://localhost:3000`
+http://localhost:3000
 
-## Status
+## Kubernetes
 
-Scaffold complete. Do not proceed to full implementation until instructed.
+Kubernetes manifests are available in:
+
+kubernetes/
+
+Check the deployment with:
+
+kubectl get pods -n foodloop
+
+## Project Structure
+
+frontend/
+backend/
+ai-service/
+python-service/
+kubernetes/
+terraform/
+rag/
+docker-compose.yml
+
+## Hackathon
+
+FoodLoop was developed as a hackathon project demonstrating full-stack development, AI integration, microservices, Docker, Kubernetes, authentication, database integration, and reliability-oriented architecture.
+
+## GitHub
+
+https://github.com/nimrahnaeem192/FoodLoop
