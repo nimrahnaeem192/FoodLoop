@@ -1,0 +1,107 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: foodloop-mongodb
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - foodloop-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: foodloop-auth-service
+    env_file:
+      - .env
+    environment:
+      PORT: 3001
+      MONGODB_URI: mongodb://mongodb:27017/foodloop
+    ports:
+      - "${AUTH_SERVICE_PORT:-3001}:3001"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  core-service:
+    build:
+      context: ./backend/core-service
+      dockerfile: Dockerfile
+    container_name: foodloop-core-service
+    env_file:
+      - .env
+    environment:
+      PORT: 3002
+      MONGODB_URI: mongodb://mongodb:27017/foodloop
+    ports:
+      - "${CORE_SERVICE_PORT:-3002}:3002"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  python-service:
+    build:
+      context: ./python-service
+      dockerfile: Dockerfile
+    container_name: foodloop-python-service
+    environment:
+      PORT: 8000
+    ports:
+      - "${PYTHON_SERVICE_PORT:-8000}:8000"
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: foodloop-ai-service
+    env_file:
+      - .env
+    environment:
+      PORT: 3003
+      PYTHON_SERVICE_URL: http://python-service:8000
+      GEMINI_API_KEY_PRIMARY: ${GEMINI_API_KEY_PRIMARY}
+      GEMINI_API_KEY_BACKUP: ${GEMINI_API_KEY_BACKUP}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+    ports:
+      - "${AI_SERVICE_PORT:-3003}:3003"
+    depends_on:
+      - python-service
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: foodloop-api-gateway
+    env_file:
+      - .env
+    environment:
+      PORT: 8080
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CORE_SERVICE_URL: http://core-service:3002
+      AI_SERVICE_URL: http://ai-service:3003
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - auth-service
+      - core-service
+      - ai-service
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: foodloop-frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - api-gateway
+
+volumes:
+  foodloop-mongo-data:
